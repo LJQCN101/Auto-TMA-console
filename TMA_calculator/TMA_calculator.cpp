@@ -1,4 +1,4 @@
-﻿// TMA_calculator.cpp : This file contains the 'main' function. Program execution begins and ends there.
+// TMA_calculator.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
 #include "pch.h"
@@ -79,11 +79,10 @@ double calculate_error(const double &L1_distance, const double &spd, const doubl
 
 int main()
 {
-    _setmode(_fileno(stdout), _O_U16TEXT);
+    //_setmode(_fileno(stdout), _O_U16TEXT); //For displaying Chinese texts.
 
     double optimize_L1_distance;
     double optimize_spd;
-    double optimize_crs = 99999.0;
     double optimize_current_distance;
 
     //target function to minimize using BFGS algorithm
@@ -115,76 +114,93 @@ int main()
     };
 
 
-    wcout << L"说明：潜艇初始位置为坐标原点，Y轴方向为正北。" << endl; //ownship initiates at coordinate (0,0). Y axis points at North. X axis points at East.
-    wcout << endl;
+    //wcout << L"说明：潜艇初始位置为坐标原点，Y轴方向为正北。" << endl;
+    cout << "NOTE: Ownship initiates at coordinate (0,0). Y axis points at North. X axis points at East." << endl;
+    cout << endl;
 
-    wcout << L"潜艇航向 h1: "; //ownship heading h1
+    //wcout << L"潜艇航向 h1: ";
+    cout << "ownship heading h1 (deg): ";
     cin >> own_ship_hdg;
-    wcout << endl;
+    cout << endl;
 
 
-    wcout << L"第1次测得方位角（相对于潜艇）: "; //target bearing 1
+    //wcout << L"第1次测得方位角（相对于潜艇）: ";
+    cout << "target bearing b1 (deg): ";
     cin >> bearing[0];
-    wcout << endl;
+    cout << endl;
     bearing[0] += own_ship_hdg;
 
-    wcout << L"时间点t1 = 0（秒）" << endl; //time t1
-    wcout << L"潜艇 X轴位置 m1 = 0（米）" << endl; //ownship coordinate (m1,n1)
-    wcout << L"潜艇 Y轴位置 n1 = 0（米）" << endl;
+    //wcout << L"时间点t1 = 0（秒）" << endl;
+    cout << "time t1 = 0 (sec)" << endl;
+    //wcout << L"潜艇 X轴位置 m1 = 0（米）" << endl;
+    cout << "ownship X axis position m1 = 0 (meter)" << endl;
+    //wcout << L"潜艇 Y轴位置 n1 = 0（米）" << endl;
+    cout << "ownship Y axis position n1 = 0 (meter)" << endl;
 
-    wcout << "*******************************" << endl;
+    cout << "*******************************" << endl;
 
-    wcout << L"潜艇航向 h2: "; //ownship heading h2
+    //wcout << L"潜艇航向 h2: ";
+    cout << "ownship heading h2: ";
     cin >> own_ship_hdg;
-    wcout << endl;
+    cout << endl;
 
-    wcout << L"第2次测得方位角: "; //target bearing 2
+    //wcout << L"第2次测得方位角: ";
+    cout << "target bearing b2 (deg): ";
     cin >> bearing[1];
-    wcout << endl;
+    cout << endl;
     bearing[1] += own_ship_hdg;
 
-    wcout << L"时间点t2（秒）: "; //time t2
+    //wcout << L"时间点t2（秒）: ";
+    cout << "time t2 (sec): ";
     cin >> recording_time[1];
-    wcout << endl;
+    cout << endl;
 
-    wcout << L"潜艇 X轴位置 m2（米）: "; //ownship coordinate (m2,n2)
+    //wcout << L"潜艇 X轴位置 m2（米）: ";
+    cout << "ownship X axis position m2 (meter): ";
     cin >> m[1];
-    wcout << endl;
+    cout << endl;
 
-    wcout << L"潜艇 Y轴位置 n2（米）: ";
+    //wcout << L"潜艇 Y轴位置 n2（米）: ";
+    cout << "ownship Y axis position n2 (meter): ";
     cin >> n[1];
-    wcout << endl;
+    cout << endl;
 
     //start input iteration
     for (unsigned int j = 2; j < 20; j++)
     {
         _j = j;
 
-        wcout << "*******************************" << endl;
+        cout << "*******************************" << endl;
 
-        wcout << L"潜艇航向 h" << j + 1 << ": ";  //ownship heading h-j
+        //wcout << L"潜艇航向 h" << j + 1 << ": ";
+        cout << "ownship heading h" << j + 1 << ": ";
         cin >> own_ship_hdg;
-        wcout << endl;
+        cout << endl;
 
-        wcout << L"第" << j + 1 << L"次测得方位角: ";  //target bearing j
+        //wcout << L"第" << j + 1 << L"次测得方位角: ";
+        cout << "target bearing b"<< j + 1 <<" (deg): ";
         cin >> bearing[j];
-        wcout << endl;
+        cout << endl;
         bearing[j] += own_ship_hdg;
 
-        wcout << L"时间点t" << j + 1 << L"（秒）: "; //time t-j
+        //wcout << L"时间点t" << j + 1 << L"（秒）: ";
+        cout << "time t"<< j + 1 <<" (sec): ";
         cin >> recording_time[j];
-        wcout << endl;
+        cout << endl;
 
-        wcout << L"潜艇 X轴位置 m" << j + 1 << L"（米）: "; //ownship coordinate (m-j,n-j)
+        //wcout << L"潜艇 X轴位置 m" << j + 1 << L"（米）: ";
+        cout << "ownship X axis position m" << j + 1 << " (meter): ";
         cin >> m[j];
-        wcout << endl;
+        cout << endl;
 
-        wcout << L"潜艇 Y轴位置 n" << j + 1 << L"（米）: ";
+        //wcout << L"潜艇 Y轴位置 n" << j + 1 << L"（米）: ";
+        cout << "ownship Y axis position n" << j + 1 << " (meter): ";
         cin >> n[j];
-        wcout << endl;
+        cout << endl;
 
-        wcout << "" << endl;
-        column_vector starting_point = { 1000.0,1.0,0.0 }; 
+        cout << "" << endl;
+        column_vector starting_point = { 1000.0,1.0,0.0 };
+        vector<double> optimal_crs;
         
         //multiple starting point for BFGS algorithm to find for multiple local minimal. (We need to keep all possible results for TMA)
 
@@ -210,15 +226,16 @@ int main()
                         starting_point(2) -= 360;
                     }
 
-                    if (abs(starting_point(2) - optimize_crs) > 1.0 && starting_point(1) > 0)
-                    {
-                        optimize_crs = starting_point(2);
+                    starting_point(2) = round(starting_point(2) * 100.0) / 100.0;
+
+                    if (starting_point(1) > 0 && find(optimal_crs.begin(), optimal_crs.end(), starting_point(2)) == optimal_crs.end()) {
+                        optimal_crs.push_back(starting_point(2));
                         optimize_L1_distance = starting_point(0);
                         optimize_spd = starting_point(1);
                         optimize_current_distance = current_distance;
 
-                        wcout << L"敌舰航向: " << optimize_crs << L"度, 速度: " << optimize_spd * ms_to_kts << L"节, 距离: " << optimize_current_distance << L"米, 误差: " << total_error << L"平方米" << endl;
-                        //wcout << L"course: " << optimize_crs << L"deg, speed: " << optimize_spd * ms_to_kts << L"knots, distance: " << optimize_current_distance << L"m, error: " << total_error << L"squared-m" << endl;
+                        //wcout << L"敌舰航向: " << optimize_crs << L"度, 速度: " << optimize_spd * ms_to_kts << L"节, 距离: " << optimize_current_distance << L"米, 误差: " << total_error << L"平方米" << endl;
+                        cout << "target course: " << starting_point(2) << "deg, speed: " << optimize_spd * ms_to_kts << "knots, distance: " << optimize_current_distance << "m, error: " << total_error << " squared m." << endl;
                     }
                 }
             }
