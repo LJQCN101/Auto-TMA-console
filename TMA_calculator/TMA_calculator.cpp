@@ -6,7 +6,6 @@
 #include <math.h>
 #include <vector>
 #include <thread>
-#include "iterator.h"
 #include <dlib/matrix.h>
 #include <dlib/optimization.h>
 #include <dlib/global_optimization.h>
