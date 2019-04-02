@@ -10,12 +10,6 @@
 #include <dlib/matrix.h>
 #include <dlib/optimization.h>
 #include <dlib/global_optimization.h>
-#include <wchar.h>
-#include <locale.h>
-#include <io.h>
-#include <cstdio>
-#include <cwchar>
-#include <fcntl.h>
 
 
 using namespace std;
@@ -30,6 +24,8 @@ vector<double> n = vector<double>(20, 0.0);
 unsigned int _j = 2; //iteration index
 double own_ship_hdg = 0.0; //ownship heading
 double current_distance = 0.0; //target distance at last bearing
+double last_travel_distance = 0.0; //ownship travel straight distance from last position
+double last_travel_direction = 0.0; //ownship travel straight direction from last position
 
 typedef dlib::matrix<double, 0, 1> column_vector;
 
@@ -79,8 +75,6 @@ double calculate_error(const double &L1_distance, const double &spd, const doubl
 
 int main()
 {
-    //_setmode(_fileno(stdout), _O_U16TEXT); //For displaying Chinese texts.
-
     double optimize_L1_distance;
     double optimize_spd;
     double optimize_current_distance;
@@ -107,63 +101,55 @@ int main()
             total_error += pow(line_error, 2);
         }
 
-        double penalty_for_spd = pow(limit(0.5 - spd, 0.0, 999999.0) * 100.0, 2) + pow(limit(spd - 6.0, 0.0, 999999.0) * 100.0, 2); //set speed limit: from 0.5 to 6.0 m/s
-        double penalty_for_range = pow(limit(500 - L1_distance, 0.0, 999999.0) * 0.1, 2) + pow(limit(L1_distance - 10000.0, 0.0, 999999.0) * 0.1, 2); //set limit for target distance at t1: from 500m to 10km
+        //double penalty_for_spd = pow(limit(0.5 - spd, 0.0, 999999.0) * 100.0, 2) + pow(limit(spd - 6.0, 0.0, 999999.0) * 100.0, 2); //set speed limit: from 0.5 to 6.0 m/s
+        //double penalty_for_range = pow(limit(500 - L1_distance, 0.0, 999999.0) * 0.1, 2) + pow(limit(L1_distance - 10000.0, 0.0, 999999.0) * 0.1, 2); //set limit for target distance at t1: from 500m to 10km
 
-        return total_error + penalty_for_spd + penalty_for_range;
+        return total_error;
     };
 
 
-    //wcout << L"说明：潜艇初始位置为坐标原点，Y轴方向为正北。" << endl;
-    cout << "NOTE: Ownship initiates at coordinate (0,0). Y axis points at North. X axis points at East." << endl;
+    cout << "NOTE: Ownship straight direction from last position means the direction pointing from your position at last time interval to your current position. It may not be the same as ownship heading after steering the boat." << endl;
     cout << endl;
 
-    //wcout << L"潜艇航向 h1: ";
-    cout << "ownship heading h1 (deg): ";
+    cout << "time t1 = 0 (sec)" << endl;
+
+    cout << "ownship heading at t1 (deg): ";
     cin >> own_ship_hdg;
     cout << endl;
 
-
-    //wcout << L"第1次测得方位角（相对于潜艇）: ";
-    cout << "target bearing b1 (deg): ";
+    cout << "target bearing at t1 (deg): ";
     cin >> bearing[0];
     cout << endl;
     bearing[0] += own_ship_hdg;
 
-    //wcout << L"时间点t1 = 0（秒）" << endl;
-    cout << "time t1 = 0 (sec)" << endl;
-    //wcout << L"潜艇 X轴位置 m1 = 0（米）" << endl;
-    cout << "ownship X axis position m1 = 0 (meter)" << endl;
-    //wcout << L"潜艇 Y轴位置 n1 = 0（米）" << endl;
-    cout << "ownship Y axis position n1 = 0 (meter)" << endl;
+    cout << "ownship straight direction from last position = 0 (deg)" << endl;
+    cout << "ownship straight distance from last position = 0 (meter)" << endl;
 
     cout << "*******************************" << endl;
 
-    //wcout << L"潜艇航向 h2: ";
-    cout << "ownship heading h2: ";
-    cin >> own_ship_hdg;
-    cout << endl;
-
-    //wcout << L"第2次测得方位角: ";
-    cout << "target bearing b2 (deg): ";
-    cin >> bearing[1];
-    cout << endl;
-    bearing[1] += own_ship_hdg;
-
-    //wcout << L"时间点t2（秒）: ";
     cout << "time t2 (sec): ";
     cin >> recording_time[1];
     cout << endl;
 
-    //wcout << L"潜艇 X轴位置 m2（米）: ";
-    cout << "ownship X axis position m2 (meter): ";
-    cin >> m[1];
+    cout << "ownship heading at t2: ";
+    cin >> own_ship_hdg;
     cout << endl;
 
-    //wcout << L"潜艇 Y轴位置 n2（米）: ";
-    cout << "ownship Y axis position n2 (meter): ";
-    cin >> n[1];
+    cout << "target bearing at t2 (deg): ";
+    cin >> bearing[1];
     cout << endl;
+    bearing[1] += own_ship_hdg;
+
+    cout << "ownship straight direction from last position (deg): ";
+    cin >> last_travel_direction;
+    cout << endl;
+
+    cout << "ownship straight distance from last position (meter): ";
+    cin >> last_travel_distance;
+    cout << endl;
+
+    m[1] = last_travel_distance * sin(last_travel_direction * deg_to_rad);
+    n[1] = last_travel_distance * cos(last_travel_direction * deg_to_rad);
 
     //start input iteration
     for (unsigned int j = 2; j < 20; j++)
@@ -172,31 +158,30 @@ int main()
 
         cout << "*******************************" << endl;
 
-        //wcout << L"潜艇航向 h" << j + 1 << ": ";
-        cout << "ownship heading h" << j + 1 << ": ";
+        cout << "time t" << j + 1 << " (sec): ";
+        cin >> recording_time[j];
+        cout << endl;
+
+        cout << "ownship heading at t" << j + 1 << ": ";
         cin >> own_ship_hdg;
         cout << endl;
 
-        //wcout << L"第" << j + 1 << L"次测得方位角: ";
-        cout << "target bearing b"<< j + 1 <<" (deg): ";
+        cout << "target bearing at t"<< j + 1 <<" (deg): ";
         cin >> bearing[j];
         cout << endl;
         bearing[j] += own_ship_hdg;
 
-        //wcout << L"时间点t" << j + 1 << L"（秒）: ";
-        cout << "time t"<< j + 1 <<" (sec): ";
-        cin >> recording_time[j];
+
+        cout << "ownship straight direction from last position (deg): ";
+        cin >> last_travel_direction;
         cout << endl;
 
-        //wcout << L"潜艇 X轴位置 m" << j + 1 << L"（米）: ";
-        cout << "ownship X axis position m" << j + 1 << " (meter): ";
-        cin >> m[j];
+        cout << "ownship straight distance from last position (meter): ";
+        cin >> last_travel_distance;
         cout << endl;
 
-        //wcout << L"潜艇 Y轴位置 n" << j + 1 << L"（米）: ";
-        cout << "ownship Y axis position n" << j + 1 << " (meter): ";
-        cin >> n[j];
-        cout << endl;
+        m[j] = m[j - 1] + last_travel_distance * sin(last_travel_direction * deg_to_rad);
+        n[j] = n[j - 1] + last_travel_distance * cos(last_travel_direction * deg_to_rad);
 
         cout << "" << endl;
         column_vector starting_point = { 1000.0,1.0,0.0 };
@@ -234,7 +219,6 @@ int main()
                         optimize_spd = starting_point(1);
                         optimize_current_distance = current_distance;
 
-                        //wcout << L"敌舰航向: " << optimize_crs << L"度, 速度: " << optimize_spd * ms_to_kts << L"节, 距离: " << optimize_current_distance << L"米, 误差: " << total_error << L"平方米" << endl;
                         cout << "target course: " << starting_point(2) << "deg, speed: " << optimize_spd * ms_to_kts << "knots, distance: " << optimize_current_distance << "m, error: " << total_error << " squared m." << endl;
                     }
                 }
