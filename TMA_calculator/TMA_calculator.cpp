@@ -14,6 +14,7 @@
 using namespace std;
 
 vector<double> bearing = vector<double>(20, 0.0); //target bearing
+vector<double> bearing_noisy = vector<double>(20, 0.0); //target bearing with random inaccuracies
 vector<double> recording_time = vector<double>(20, 0.0);
 
 //ownship coordinate (m,n)
@@ -22,7 +23,6 @@ vector<double> n = vector<double>(20, 0.0);
 
 unsigned int _j = 2; //iteration index
 double own_ship_hdg = 0.0; //ownship heading
-double current_distance = 0.0; //target distance at last bearing
 double last_travel_distance = 0.0; //ownship travel straight distance from last position
 double last_travel_direction = 0.0; //ownship travel straight direction from last position
 
@@ -45,9 +45,9 @@ double limit(double input, double lower_limit, double upper_limit)
     }
 }
 
-double calculate_error(const double &L1_distance, const double &spd, const double &crs)
+vector<double> calculate_last_brg(const double &L1_distance, const double &spd, const double &crs)
 {
-
+    vector<double> out = vector<double>(3, 0.0);
     double u = spd * sin(crs * deg_to_rad); //target speed component on x axis
     double v = spd * cos(crs * deg_to_rad); //target speed component on y axis
 
@@ -55,20 +55,36 @@ double calculate_error(const double &L1_distance, const double &spd, const doubl
     double a = L1_distance * sin(bearing[0] * deg_to_rad); //L1_distance = target distance at first bearing
     double b = L1_distance * cos(bearing[0] * deg_to_rad);
 
-    double total_error = 0.0;
+    //target coordinate (x,y) at last bearing
+    double x = a + u * recording_time[_j];
+    double y = b + v * recording_time[_j];
 
-    for (unsigned int i = 0; i < _j + 1; i++)
-    {
-        //target coordinate (x,y) at time
-        double x = a + u * recording_time[i];
-        double y = b + v * recording_time[i];
-        double line_error = (y - n[i]) * sin(bearing[i] * deg_to_rad) - (x - m[i]) * cos(bearing[i] * deg_to_rad);
-        total_error += pow(line_error, 2);
+    out[0] = x;
+    out[1] = y;
+    out[2] = sqrt(pow(y - n[_j], 2) + pow(x - m[_j], 2));
 
-        current_distance = sqrt(pow(y - n[i], 2) + pow(x - m[i], 2));
-    }
+    return out;
+}
 
-    return total_error;
+vector<double> calculate_last_brg_noisy(const double &L1_distance, const double &spd, const double &crs)
+{
+    vector<double> out = vector<double>(3, 0.0);
+    double u = spd * sin(crs * deg_to_rad); //target speed component on x axis
+    double v = spd * cos(crs * deg_to_rad); //target speed component on y axis
+
+    //target coordinate (a,b) at first bearing
+    double a = L1_distance * sin(bearing_noisy[0] * deg_to_rad); //L1_distance = target distance at first bearing
+    double b = L1_distance * cos(bearing_noisy[0] * deg_to_rad);
+
+    //target coordinate (x,y) at last bearing
+    double x = a + u * recording_time[_j];
+    double y = b + v * recording_time[_j];
+
+    out[0] = x;
+    out[1] = y;
+    out[2] = sqrt(pow(y - n[_j], 2) + pow(x - m[_j], 2));
+
+    return out;
 }
 
 
@@ -77,6 +93,8 @@ int main()
     double optimize_L1_distance;
     double optimize_spd;
     double optimize_current_distance;
+    double optimize_x;
+    double optimize_y;
 
     //target function to minimize using BFGS algorithm
     auto target_function = [](const column_vector& mStartingPoint)
@@ -106,46 +124,69 @@ int main()
         return total_error;
     };
 
+    auto target_function_noisy = [](const column_vector& mStartingPoint)
+    {
+        const double L1_distance = mStartingPoint(0);
+        const double spd = mStartingPoint(1);
+        const double crs = mStartingPoint(2);
 
-    cout << "NOTE: Ownship straight direction from last position means the direction pointing from your position at last time interval to your current position. It may not be the same as ownship heading after steering the boat." << endl;
-    cout << endl;
+        double u = spd * sin(crs * deg_to_rad);
+        double v = spd * cos(crs * deg_to_rad);
+        double a = L1_distance * sin(bearing_noisy[0] * deg_to_rad);
+        double b = L1_distance * cos(bearing_noisy[0] * deg_to_rad);
 
-    cout << "time t1 = 0 (sec)" << endl;
+        double total_error = 0.0;
 
-    cout << "ownship heading at t1 (deg): ";
+        for (unsigned int i = 0; i < _j + 1; i++)
+        {
+            double x = a + u * recording_time[i];
+            double y = b + v * recording_time[i];
+            double line_error = (y - n[i]) * sin(bearing_noisy[i] * deg_to_rad) - (x - m[i]) * cos(bearing_noisy[i] * deg_to_rad);
+            total_error += pow(line_error, 2);
+        }
+        return total_error;
+    };
+
+
+    std::cout << "NOTE: Ownship straight direction from last position means the direction pointing from your position at last time interval to your current position. It may not be the same as ownship heading after steering the boat." << endl;
+    std::cout << endl;
+
+    std::cout << "time t1 = 0 (sec)" << endl;
+
+    std::cout << "ownship heading at t1 (deg): ";
     cin >> own_ship_hdg;
-    cout << endl;
+    std::cout << endl;
 
-    cout << "target bearing at t1 (deg): ";
+    std::cout << "target bearing at t1 (deg): ";
     cin >> bearing[0];
-    cout << endl;
+    std::cout << endl;
     bearing[0] += own_ship_hdg;
 
-    cout << "ownship straight direction from last position = 0 (deg)" << endl;
-    cout << "ownship straight distance from last position = 0 (meter)" << endl;
+    std::cout << "ownship straight direction from last position = 0 (deg)" << endl;
+    std::cout << "ownship straight distance from last position = 0 (meter)" << endl;
 
-    cout << "*******************************" << endl;
+    std::cout << "*******************************" << endl;
 
-    cout << "time t2 (sec): ";
+    std::cout << "time t2 (sec): ";
     cin >> recording_time[1];
-    cout << endl;
+    std::cout << endl;
 
-    cout << "ownship heading at t2: ";
+    std::cout << "ownship heading at t2: ";
     cin >> own_ship_hdg;
-    cout << endl;
+    std::cout << endl;
 
-    cout << "target bearing at t2 (deg): ";
+    std::cout << "target bearing at t2 (deg): ";
     cin >> bearing[1];
-    cout << endl;
+    std::cout << endl;
     bearing[1] += own_ship_hdg;
 
-    cout << "ownship straight direction from last position (deg): ";
+    std::cout << "ownship straight direction from last position (deg): ";
     cin >> last_travel_direction;
-    cout << endl;
+    std::cout << endl;
 
-    cout << "ownship straight distance from last position (meter): ";
+    std::cout << "ownship straight distance from last position (meter): ";
     cin >> last_travel_distance;
-    cout << endl;
+    std::cout << endl;
 
     m[1] = last_travel_distance * sin(last_travel_direction * deg_to_rad);
     n[1] = last_travel_distance * cos(last_travel_direction * deg_to_rad);
@@ -155,34 +196,34 @@ int main()
     {
         _j = j;
 
-        cout << "*******************************" << endl;
+        std::cout << "*******************************" << endl;
 
-        cout << "time t" << j + 1 << " (sec): ";
+        std::cout << "time t" << j + 1 << " (sec): ";
         cin >> recording_time[j];
-        cout << endl;
+        std::cout << endl;
 
-        cout << "ownship heading at t" << j + 1 << ": ";
+        std::cout << "ownship heading at t" << j + 1 << ": ";
         cin >> own_ship_hdg;
-        cout << endl;
+        std::cout << endl;
 
-        cout << "target bearing at t"<< j + 1 <<" (deg): ";
+        std::cout << "target bearing at t"<< j + 1 <<" (deg): ";
         cin >> bearing[j];
-        cout << endl;
+        std::cout << endl;
         bearing[j] += own_ship_hdg;
 
 
-        cout << "ownship straight direction from last position (deg): ";
+        std::cout << "ownship straight direction from last position (deg): ";
         cin >> last_travel_direction;
-        cout << endl;
+        std::cout << endl;
 
-        cout << "ownship straight distance from last position (meter): ";
+        std::cout << "ownship straight distance from last position (meter): ";
         cin >> last_travel_distance;
-        cout << endl;
+        std::cout << endl;
 
         m[j] = m[j - 1] + last_travel_distance * sin(last_travel_direction * deg_to_rad);
         n[j] = n[j - 1] + last_travel_distance * cos(last_travel_direction * deg_to_rad);
 
-        cout << "" << endl;
+        std::cout << "" << endl;
         column_vector starting_point = { 1000.0,1.0,0.0 };
         vector<double> optimal_crs;
         
@@ -197,7 +238,7 @@ int main()
                     starting_point = { L1_distance,spd,crs };
 
                     dlib::find_min_using_approximate_derivatives(dlib::bfgs_search_strategy(), dlib::objective_delta_stop_strategy(1e-7), target_function, starting_point, -1);
-                    double total_error = calculate_error(starting_point(0), starting_point(1), starting_point(2));
+                    vector<double> last_brg = calculate_last_brg(starting_point(0), starting_point(1), starting_point(2));
 
                     //adjust course result within 0-360 range
                     while (starting_point(2) < 0)
@@ -212,16 +253,118 @@ int main()
 
                     starting_point(2) = round(starting_point(2) * 100.0) / 100.0;
 
-                    if (starting_point(1) > 0 && find(optimal_crs.begin(), optimal_crs.end(), starting_point(2)) == optimal_crs.end()) {
+                    if (starting_point(0) > 0.1 && starting_point(1) > 0.0 && find(optimal_crs.begin(), optimal_crs.end(), starting_point(2)) == optimal_crs.end()) {
                         optimal_crs.push_back(starting_point(2));
                         optimize_L1_distance = starting_point(0);
                         optimize_spd = starting_point(1);
-                        optimize_current_distance = current_distance;
+                        optimize_current_distance = last_brg[2];
+                        optimize_x = last_brg[0];
+                        optimize_y = last_brg[1];
 
-                        cout << "target course: " << starting_point(2) << "deg, speed: " << optimize_spd * ms_to_kts << "knots, distance: " << optimize_current_distance << "m, error: " << total_error << " squared m." << endl;
+                        std::cout << "target course: " << starting_point(2) << "deg, speed: " << optimize_spd * ms_to_kts << "knots, distance: " << optimize_current_distance << "m" << endl;
                     }
                 }
             }
-        }  
+        }
+
+        //error analysis
+        if (optimal_crs.size() > 0)
+        {
+            double last_opt_crs = optimal_crs[optimal_crs.size() - 1];
+            int total_error_count = 0;
+            int error_within_75m = 0;
+            int error_within_150m = 0;
+            int error_within_300m = 0;
+            int error_within_5deg = 0;
+            int error_within_10deg = 0;
+            int error_within_20deg = 0;
+
+            for (double L1_distance = optimize_L1_distance; L1_distance <= optimize_L1_distance + 1.0; L1_distance += 0.1)
+            {
+                for (double spd = optimize_spd; spd <= optimize_spd + 0.1; spd += 0.01)
+                {
+                    for (double crs = last_opt_crs; crs <= last_opt_crs + 1.0; crs += 0.1)
+                    {
+                        starting_point = { L1_distance,spd,crs };
+
+                        for (unsigned int k = 0; k < _j + 1; k++)
+                        {
+                            bearing_noisy[k] = bearing[k] + (rand() % 11 - 5) / 10.0;
+                        }
+
+                        dlib::find_min_using_approximate_derivatives(dlib::bfgs_search_strategy(), dlib::objective_delta_stop_strategy(1e-7), target_function_noisy, starting_point, -1);
+                        vector<double> last_brg = calculate_last_brg_noisy(starting_point(0), starting_point(1), starting_point(2));
+
+                        //adjust course result within 0-360 range
+                        while (starting_point(2) < 0)
+                        {
+                            starting_point(2) += 360;
+                        }
+
+                        while (starting_point(2) >= 360)
+                        {
+                            starting_point(2) -= 360;
+                        }
+
+                        if (starting_point(0) > 0.1 && starting_point(1) > 0.0) {
+                            double last_x = last_brg[0];
+                            double last_y = last_brg[1];
+                            double distance_error = sqrt(pow(last_x - optimize_x, 2) + pow(last_y - optimize_y, 2));
+                            double course_error = abs(starting_point(2) - last_opt_crs);
+                            if (distance_error < 75.0)
+                            {
+                                error_within_75m += 1;
+                            }
+                            
+                            if (distance_error < 150.0)
+                            {
+                                error_within_150m += 1;
+                            }
+                            
+                            if (distance_error < 300.0)
+                            {
+                                error_within_300m += 1;
+                            }
+
+                            if (course_error < 5.0)
+                            {
+                                error_within_5deg += 1;
+                            }
+
+                            if (course_error < 10.0)
+                            {
+                                error_within_10deg += 1;
+                            }
+
+                            if (course_error < 20.0)
+                            {
+                                error_within_20deg += 1;
+                            }
+
+                            total_error_count += 1;
+                        }
+                    }
+                }
+            }
+            double error_prob_75m = error_within_75m * 100.0 / total_error_count;
+            double error_prob_150m = error_within_150m * 100.0 / total_error_count;
+            double error_prob_300m = error_within_300m * 100.0 / total_error_count;
+            double error_prob_5deg = error_within_5deg * 100.0 / total_error_count;
+            double error_prob_10deg = error_within_10deg * 100.0 / total_error_count;
+            double error_prob_20deg = error_within_20deg * 100.0 / total_error_count;
+            std::cout << endl;
+            std::cout << "probability of target course error within 5deg: " << error_prob_5deg << " %" << endl;
+            std::cout << "probability of target course error within 10deg: " << error_prob_10deg << " %" << endl;
+            std::cout << "probability of target course error within 20deg: " << error_prob_20deg << " %" << endl;
+            std::cout << endl;
+            std::cout << "probability of target positional error within 75m: " << error_prob_75m << " %" << endl;
+            std::cout << "probability of target positional error within 150m: " << error_prob_150m << " %" << endl;
+            std::cout << "probability of target positional error within 300m: " << error_prob_300m << " %" << endl;
+            std::cout << endl;
+        }
+        else
+        {
+            std::cout << "No solution found!" << endl;
+        }
     }
 }
