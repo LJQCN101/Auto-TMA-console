@@ -9,6 +9,12 @@
 #include <dlib/matrix.h>
 #include <dlib/optimization.h>
 #include <dlib/global_optimization.h>
+#include <wchar.h>
+#include <locale.h>
+#include <io.h>
+#include <cstdio>
+#include <cwchar>
+#include <fcntl.h>
 
 
 using namespace std;
@@ -90,6 +96,8 @@ vector<double> calculate_last_brg_noisy(const double &L1_distance, const double 
 
 int main()
 {
+    _setmode(_fileno(stdout), _O_U16TEXT); //support for chinese characters
+
     double optimize_L1_distance;
     double optimize_spd;
     double optimize_current_distance;
@@ -148,45 +156,46 @@ int main()
     };
 
 
-    std::cout << "NOTE: Ownship straight direction from last position means the direction pointing from your position at last time interval to your current position. It may not be the same as ownship heading after steering the boat." << endl;
-    std::cout << endl;
+    std::wcout << L"NOTE: Ownship straight direction from last position means the direction pointing from your position at last time interval to your current position. It may not be the same as ownship heading after steering the boat." << endl;
+    std::wcout << L"说明：本舰自上一次所在位置的移动方向 = 从上一个观测点指向当前位置的绝对方位，可在海图中对两个观测点连线获得。" << endl;
+    std::wcout << endl;
 
-    std::cout << "time t1 = 0 (sec)" << endl;
+    std::wcout << L"时间点time t1 = 0 (sec)" << endl;
 
-    std::cout << "ownship heading at t1 (deg): ";
+    std::wcout << L"本舰航向ownship heading at t1 (deg): ";
     cin >> own_ship_hdg;
-    std::cout << endl;
+    std::wcout << endl;
 
-    std::cout << "target bearing at t1 (deg): ";
+    std::wcout << L"敌舰相对方位角target bearing at t1 (deg): ";
     cin >> bearing[0];
-    std::cout << endl;
+    std::wcout << endl;
     bearing[0] += own_ship_hdg;
 
-    std::cout << "ownship straight direction from last position = 0 (deg)" << endl;
-    std::cout << "ownship straight distance from last position = 0 (meter)" << endl;
+    std::wcout << L"本舰自上一次所在位置的移动方向ownship straight direction from last position = 0 (deg)" << endl;
+    std::wcout << L"本舰距上一次所在位置的直线距离ownship straight distance from last position = 0 (meter)" << endl;
 
-    std::cout << "*******************************" << endl;
+    std::wcout << L"*******************************" << endl;
 
-    std::cout << "time t2 (sec): ";
+    std::wcout << L"时间点time t2 (sec): ";
     cin >> recording_time[1];
-    std::cout << endl;
+    std::wcout << endl;
 
-    std::cout << "ownship heading at t2: ";
+    std::wcout << L"本舰航向ownship heading at t2: ";
     cin >> own_ship_hdg;
-    std::cout << endl;
+    std::wcout << endl;
 
-    std::cout << "target bearing at t2 (deg): ";
+    std::wcout << L"敌舰相对方位角target bearing at t2 (deg): ";
     cin >> bearing[1];
-    std::cout << endl;
+    std::wcout << endl;
     bearing[1] += own_ship_hdg;
 
-    std::cout << "ownship straight direction from last position (deg): ";
+    std::wcout << L"本舰自上一次所在位置的移动方向ownship straight direction from last position (deg): ";
     cin >> last_travel_direction;
-    std::cout << endl;
+    std::wcout << endl;
 
-    std::cout << "ownship straight distance from last position (meter): ";
+    std::wcout << L"本舰距上一次所在位置的直线距离ownship straight distance from last position (meter): ";
     cin >> last_travel_distance;
-    std::cout << endl;
+    std::wcout << endl;
 
     m[1] = last_travel_distance * sin(last_travel_direction * deg_to_rad);
     n[1] = last_travel_distance * cos(last_travel_direction * deg_to_rad);
@@ -196,34 +205,34 @@ int main()
     {
         _j = j;
 
-        std::cout << "*******************************" << endl;
+        std::wcout << L"*******************************" << endl;
 
-        std::cout << "time t" << j + 1 << " (sec): ";
+        std::wcout << L"时间点time t" << j + 1 << L" (sec): ";
         cin >> recording_time[j];
-        std::cout << endl;
+        std::wcout << endl;
 
-        std::cout << "ownship heading at t" << j + 1 << ": ";
+        std::wcout << L"本舰航向ownship heading at t" << j + 1 << L": ";
         cin >> own_ship_hdg;
-        std::cout << endl;
+        std::wcout << endl;
 
-        std::cout << "target bearing at t"<< j + 1 <<" (deg): ";
+        std::wcout << L"敌舰相对方位角target bearing at t"<< j + 1 <<" (deg): ";
         cin >> bearing[j];
-        std::cout << endl;
+        std::wcout << endl;
         bearing[j] += own_ship_hdg;
 
 
-        std::cout << "ownship straight direction from last position (deg): ";
+        std::wcout << L"本舰自上一次所在位置的移动方向ownship straight direction from last position (deg): ";
         cin >> last_travel_direction;
-        std::cout << endl;
+        std::wcout << endl;
 
-        std::cout << "ownship straight distance from last position (meter): ";
+        std::wcout << L"本舰距上一次所在位置的直线距离ownship straight distance from last position (meter): ";
         cin >> last_travel_distance;
-        std::cout << endl;
+        std::wcout << endl;
 
         m[j] = m[j - 1] + last_travel_distance * sin(last_travel_direction * deg_to_rad);
         n[j] = n[j - 1] + last_travel_distance * cos(last_travel_direction * deg_to_rad);
 
-        std::cout << "" << endl;
+        std::wcout << L"" << endl;
         column_vector starting_point = { 1000.0,1.0,0.0 };
         vector<double> optimal_crs;
         
@@ -263,9 +272,9 @@ int main()
 
                         if (abs(m[j]) < 0.1 && abs(n[j]) < 0.1)
                         {
-                            std::cout << "target course: " << starting_point(2) << "deg" << endl;
+                            std::wcout << L"敌舰航向target course: " << starting_point(2) << L"deg" << endl;
                         }
-                        else std::cout << "target course: " << starting_point(2) << "deg, speed: " << optimize_spd * ms_to_kts << "knots, distance: " << optimize_current_distance << "m" << endl;
+                        else std::wcout << L"敌舰航向target course: " << starting_point(2) << L"deg, 速度speed: " << optimize_spd * ms_to_kts << L"knots, 距离distance: " << optimize_current_distance << L"m" << endl;
                     }
                 }
             }
@@ -356,26 +365,26 @@ int main()
             double error_prob_5deg = error_within_5deg * 100.0 / total_error_count;
             double error_prob_10deg = error_within_10deg * 100.0 / total_error_count;
             double error_prob_20deg = error_within_20deg * 100.0 / total_error_count;
-            std::cout << endl;
-            std::cout << "probability of target course error within 5deg: " << error_prob_5deg << " %" << endl;
-            std::cout << "probability of target course error within 10deg: " << error_prob_10deg << " %" << endl;
-            std::cout << "probability of target course error within 20deg: " << error_prob_20deg << " %" << endl;
-            std::cout << endl;
+            std::wcout << endl;
+            std::wcout << L"航向误差分布位于5度以内的概率probability of target course error within 5deg: " << error_prob_5deg << L" %" << endl;
+            std::wcout << L"航向误差分布位于10度以内的概率probability of target course error within 10deg: " << error_prob_10deg << L" %" << endl;
+            std::wcout << L"航向误差分布位于20度以内的概率probability of target course error within 20deg: " << error_prob_20deg << L" %" << endl;
+            std::wcout << endl;
             if (abs(m[j]) < 0.1 && abs(n[j]) < 0.1)
             {
-                std::cout << "3 bearings when stationary can only get course solution." << endl;
+                std::wcout << j + 1 << L" bearings when stationary can only get course solution." << endl;
             }
             else
             {
-                std::cout << "probability of target positional error within 75m: " << error_prob_75m << " %" << endl;
-                std::cout << "probability of target positional error within 150m: " << error_prob_150m << " %" << endl;
-                std::cout << "probability of target positional error within 300m: " << error_prob_300m << " %" << endl;
+                std::wcout << L"位置误差分布位于75米以内的概率probability of target positional error within 75m: " << error_prob_75m << L" %" << endl;
+                std::wcout << L"位置误差分布位于150米以内的概率probability of target positional error within 150m: " << error_prob_150m << L" %" << endl;
+                std::wcout << L"位置误差分布位于300米以内的概率probability of target positional error within 300m: " << error_prob_300m << L" %" << endl;
             }
-            std::cout << endl;
+            std::wcout << endl;
         }
         else
         {
-            std::cout << "No solution found!" << endl;
+            std::wcout << L"No solution found! 无解！" << endl;
         }
     }
 }
