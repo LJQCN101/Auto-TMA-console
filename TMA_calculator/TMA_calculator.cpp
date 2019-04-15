@@ -261,7 +261,11 @@ int main()
                         optimize_x = last_brg[0];
                         optimize_y = last_brg[1];
 
-                        std::cout << "target course: " << starting_point(2) << "deg, speed: " << optimize_spd * ms_to_kts << "knots, distance: " << optimize_current_distance << "m" << endl;
+                        if (abs(m[j]) < 0.1 && abs(n[j]) < 0.1)
+                        {
+                            std::cout << "target course: " << starting_point(2) << "deg" << endl;
+                        }
+                        else std::cout << "target course: " << starting_point(2) << "deg, speed: " << optimize_spd * ms_to_kts << "knots, distance: " << optimize_current_distance << "m" << endl;
                     }
                 }
             }
@@ -357,9 +361,16 @@ int main()
             std::cout << "probability of target course error within 10deg: " << error_prob_10deg << " %" << endl;
             std::cout << "probability of target course error within 20deg: " << error_prob_20deg << " %" << endl;
             std::cout << endl;
-            std::cout << "probability of target positional error within 75m: " << error_prob_75m << " %" << endl;
-            std::cout << "probability of target positional error within 150m: " << error_prob_150m << " %" << endl;
-            std::cout << "probability of target positional error within 300m: " << error_prob_300m << " %" << endl;
+            if (abs(m[j]) < 0.1 && abs(n[j]) < 0.1)
+            {
+                std::cout << "3 bearings when stationary can only get course solution." << endl;
+            }
+            else
+            {
+                std::cout << "probability of target positional error within 75m: " << error_prob_75m << " %" << endl;
+                std::cout << "probability of target positional error within 150m: " << error_prob_150m << " %" << endl;
+                std::cout << "probability of target positional error within 300m: " << error_prob_300m << " %" << endl;
+            }
             std::cout << endl;
         }
         else
