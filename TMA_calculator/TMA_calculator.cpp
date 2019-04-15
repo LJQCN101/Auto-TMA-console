@@ -310,7 +310,7 @@ int main()
                             double last_x = last_brg[0];
                             double last_y = last_brg[1];
                             double distance_error = sqrt(pow(last_x - optimize_x, 2) + pow(last_y - optimize_y, 2));
-                            double course_error = abs(starting_point(2) - last_opt_crs);
+                            double course_error = min(abs(starting_point(2) - last_opt_crs), 360.0 - abs(starting_point(2) - last_opt_crs));
                             if (distance_error < 75.0)
                             {
                                 error_within_75m += 1;
